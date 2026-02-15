@@ -15,8 +15,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# Make entrypoint executable
+RUN chmod +x entrypoint.sh
 
-# Collect static files
-RUN DJANGO_SECRET_KEY=build_secret_key python manage.py collectstatic --noinput
-
-CMD gunicorn career_copilot.wsgi:application --bind 0.0.0.0:8000
+CMD ["./entrypoint.sh"]

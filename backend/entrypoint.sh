@@ -1,7 +1,11 @@
 #!/bin/sh
 set -e
 
+echo "Running migrations..."
 python manage.py migrate --noinput
-python manage.py create_superuser
+
+echo "Collecting static files..."
 python manage.py collectstatic --noinput
-exec gunicorn career_copilot.wsgi:application -c career_copilot/gunicorn_conf.py
+
+echo "Starting Gunicorn..."
+exec gunicorn career_copilot.wsgi:application --bind 0.0.0.0:8000
