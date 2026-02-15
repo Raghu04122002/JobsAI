@@ -3,16 +3,47 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
+import {
+    LayoutDashboard,
+    FileText,
+    Briefcase,
+    Sparkles,
+    Scissors,
+    ClipboardList,
+    LogOut,
+    Menu,
+    X
+} from 'lucide-react'
 
 import { clearTokens } from '@/lib/auth'
 
-const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { href: '/resume', label: 'Resumes', icon: '📄' },
-    { href: '/jobs', label: 'Jobs', icon: '💼' },
-    { href: '/optimizer', label: 'Analyzer', icon: '🔍' },
-    { href: '/copilot', label: 'Tailor', icon: '✂️' },
-    { href: '/applications', label: 'Applications', icon: '📋' },
+const navGroups = [
+    {
+        title: 'Main',
+        items: [
+            { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }
+        ]
+    },
+    {
+        title: 'Career',
+        items: [
+            { href: '/resume', label: 'Resumes', icon: FileText },
+            { href: '/jobs', label: 'Jobs', icon: Briefcase }
+        ]
+    },
+    {
+        title: 'AI Copilot',
+        items: [
+            { href: '/optimizer', label: 'Analyzer', icon: Sparkles, special: true },
+            { href: '/copilot', label: 'Tailor', icon: Scissors }
+        ]
+    },
+    {
+        title: 'Tracking',
+        items: [
+            { href: '/applications', label: 'Applications', icon: ClipboardList }
+        ]
+    }
 ]
 
 export function Sidebar() {
@@ -29,53 +60,100 @@ export function Sidebar() {
         <>
             {/* Mobile toggle */}
             <button
-                className="fixed top-4 left-4 z-40 rounded-lg border bg-white p-2 shadow-md md:hidden"
+                className="fixed top-4 left-4 z-40 rounded-xl border bg-white/80 p-2 shadow-sm backdrop-blur-md md:hidden"
                 onClick={() => setOpen(!open)}
                 style={{ borderColor: '#E2E8F0' }}
             >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M3 5h14M3 10h14M3 15h14" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
+                {open ? <X size={20} className="text-gray-600" /> : <Menu size={20} className="text-gray-600" />}
             </button>
 
             {/* Overlay */}
             {open && (
-                <div className="fixed inset-0 z-20 bg-black/20 md:hidden" onClick={() => setOpen(false)} />
+                <div
+                    className="fixed inset-0 z-20 bg-black/20 backdrop-blur-sm md:hidden"
+                    onClick={() => setOpen(false)}
+                />
             )}
 
-            <aside className={`sidebar ${open ? 'open' : ''}`}>
+            {/* Sidebar */}
+            <aside
+                className={`fixed inset-y-0 left-0 z-30 flex w-72 flex-col bg-white/70 backdrop-blur-xl border-r border-slate-200 transition-transform duration-300 md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'
+                    }`}
+            >
                 {/* Logo */}
-                <div className="flex items-center gap-2.5 px-5 py-5 border-b" style={{ borderColor: '#E2E8F0' }}>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold text-white" style={{ background: '#4F46E5' }}>
-                        J
+                <div className="flex items-center gap-3 px-6 py-6 border-b border-slate-100">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-200">
+                        <span className="text-lg font-bold">J</span>
                     </div>
-                    <span className="text-lg font-bold" style={{ color: '#0F172A' }}>JobAI</span>
+                    <span className="text-xl font-bold text-slate-900 tracking-tight">JobAI</span>
                 </div>
 
                 {/* Nav */}
-                <nav className="flex-1 px-3 py-4 space-y-1">
-                    {navItems.map((item) => (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={`sidebar-link ${pathname === item.href ? 'active' : ''}`}
-                            onClick={() => setOpen(false)}
-                        >
-                            <span className="text-base">{item.icon}</span>
-                            {item.label}
-                        </Link>
+                <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-8">
+                    {navGroups.map((group) => (
+                        <div key={group.title}>
+                            <h3 className="mb-3 px-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+                                {group.title}
+                            </h3>
+                            <div className="space-y-1">
+                                {group.items.map((item) => {
+                                    const isActive = pathname === item.href
+                                    const Icon = item.icon
+
+                                    return (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            onClick={() => setOpen(false)}
+                                            className={`
+                        group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200
+                        ${isActive
+                                                    ? 'bg-indigo-50 text-indigo-700 shadow-sm'
+                                                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                                                }
+                        ${item.special && !isActive ? 'hover:bg-indigo-50/50 hover:text-indigo-600' : ''}
+                      `}
+                                        >
+                                            {/* Active Indicator Bar */}
+                                            {isActive && (
+                                                <div className="absolute left-0 h-8 w-1 rounded-r-lg bg-indigo-600" />
+                                            )}
+
+                                            {/* Icon */}
+                                            <Icon
+                                                size={20}
+                                                className={`
+                          ${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}
+                          ${item.special ? 'text-indigo-500' : ''}
+                        `}
+                                            />
+
+                                            {/* Label */}
+                                            <span>{item.label}</span>
+
+                                            {/* Special Badge/Effect */}
+                                            {item.special && (
+                                                <div className="ml-auto flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5">
+                                                    <Sparkles size={12} className="text-indigo-600" />
+                                                    <span className="text-[10px] font-bold uppercase text-indigo-700">AI</span>
+                                                </div>
+                                            )}
+                                        </Link>
+                                    )
+                                })}
+                            </div>
+                        </div>
                     ))}
                 </nav>
 
                 {/* Logout */}
-                <div className="px-3 py-4 border-t" style={{ borderColor: '#E2E8F0' }}>
+                <div className="p-4 border-t border-slate-100">
                     <button
                         onClick={logout}
-                        className="sidebar-link w-full text-left"
-                        style={{ color: '#DC2626' }}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
                     >
-                        <span className="text-base">🚪</span>
-                        Log out
+                        <LogOut size={20} className="text-red-500" />
+                        Sign out
                     </button>
                 </div>
             </aside>

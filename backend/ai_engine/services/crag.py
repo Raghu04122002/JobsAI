@@ -123,8 +123,10 @@ class CRAGService:
             )
             data = json.loads(response.choices[0].message.content)
             data.setdefault('match_score', 0)
+            data.setdefault('ats_score', data.get('match_score', 0))  # Backwards compatibility
             data.setdefault('matched_keywords', [])
             data.setdefault('missing_keywords', [])
+            data.setdefault('skill_gaps', [])
             data.setdefault('improvement_suggestions', [])
             data.setdefault('tailored_resume_bullets', [])
             data.setdefault('cover_letter_snippet', '')
@@ -133,8 +135,10 @@ class CRAGService:
             logger.exception('Resume/job match generation failed.')
             return {
                 'match_score': 0,
+                'ats_score': 0,
                 'matched_keywords': [],
                 'missing_keywords': [],
+                'skill_gaps': [],
                 'improvement_suggestions': ['Matching failed. Please retry.'],
                 'tailored_resume_bullets': [],
                 'cover_letter_snippet': '',

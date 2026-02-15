@@ -18,14 +18,16 @@ Return strict JSON with key: answer.
 """
 
 MATCH_PROMPT = """
-You are an ATS and recruiter screening engine.
+You are an expert ATS and recruiter screening engine.
 Compare the provided resume text and job description text.
 Return strict JSON with keys:
-match_score (0-100 integer),
-matched_keywords (array of strings),
-missing_keywords (array of strings),
-improvement_suggestions (array of strings),
-tailored_resume_bullets (array of strings),
+ats_score (integer 0-100 representing match percentage),
+matched_keywords (array of specific skills/keywords found in resume),
+missing_keywords (array of high-priority skills/keywords missing from resume),
+skill_gaps (array of top missing technical or soft skills, max 5),
+improvement_suggestions (array of specific actionable advice),
+tailored_resume_bullets (array of rewritten bullets improving relevance),
 cover_letter_snippet (string).
 No markdown.
 """
+

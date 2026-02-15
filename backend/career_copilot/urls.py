@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from accounts.views import SignupViewSet
 from accounts.token_views import LoginTokenObtainPairView
 from applications.views import ApplicationViewSet
-from ai_engine.views import CopilotViewSet
+from ai_engine.views import CopilotViewSet, AnalysisResultViewSet
 from chat.views import ChatSessionViewSet
 from jobs.views import JobDescriptionViewSet
 from resumes.views import ResumeViewSet
@@ -20,6 +20,8 @@ router.register(r'jobs', JobDescriptionViewSet, basename='jobs')
 router.register(r'applications', ApplicationViewSet, basename='applications')
 router.register(r'chat', ChatSessionViewSet, basename='chat')
 router.register(r'copilot', CopilotViewSet, basename='copilot')
+router.register(r'analysis-results', AnalysisResultViewSet, basename='analysis-results')
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),

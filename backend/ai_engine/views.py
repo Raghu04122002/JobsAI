@@ -4,12 +4,15 @@ from rest_framework.decorators import action
 from jobs.models import JobDescription
 from resumes.models import Resume
 
-from .serializers import AnalyzeRequestSerializer, MatchRequestSerializer, TailorRequestSerializer
+from .models import AnalysisResult
+from .serializers import AnalyzeRequestSerializer, MatchRequestSerializer, TailorRequestSerializer, AnalysisResultSerializer
 from .services.crag import CRAGService
+from .throttles import CopilotThrottle
 
 
 class CopilotViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [CopilotThrottle]
 
     @action(detail=False, methods=['post'])
     def analyze(self, request):
@@ -65,4 +68,25 @@ class CopilotViewSet(viewsets.ViewSet):
 
         crag = CRAGService(max_retries=2)
         data = crag.match_resume_job(resume_text=resume.extracted_text, job_text=job.description)
+
+        # Persist Analysis Result
+        AnalysisResult.objects.create(
+            user=request.user,
+            resume=resume,
+            job=job,
+            ats_score=data.get('ats_score', 0),
+            matched_keywords=data.get('matched_keywords', []),
+            missing_keywords=data.get('missing_keywords', []),
+            skill_gaps=data.get('skill_gaps', [])
+        )
+
         return response.Response(data, status=status.HTTP_200_OK)
+
+
+class AnalysisResultViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AnalysisResultSerializer
+
+    def get_queryset(self):
+        return AnalysisResult.objects.filter(user=self.request.user).select_related('job').order_by('-created_at')
+

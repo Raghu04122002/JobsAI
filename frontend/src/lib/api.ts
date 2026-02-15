@@ -69,3 +69,20 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+// ... existing code ...
+
+export interface AnalysisResult {
+  id: number
+  ats_score: number
+  job_title: string
+  company: string
+  created_at: string
+}
+
+export const getAnalysisResults = async (): Promise<AnalysisResult[]> => {
+  const response = await api.get('/api/analysis-results/')
+  return response.data
+}
+
+// Update MatchResponse type if it exists, or just ensure the call site handles it
+// Ideally we should export the types from a shared file or here

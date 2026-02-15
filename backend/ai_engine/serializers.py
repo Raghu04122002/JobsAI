@@ -16,3 +16,14 @@ class TailorRequestSerializer(serializers.Serializer):
 class MatchRequestSerializer(serializers.Serializer):
     resume_id = serializers.IntegerField(min_value=1)
     job_id = serializers.IntegerField(min_value=1)
+
+
+class AnalysisResultSerializer(serializers.ModelSerializer):
+    job_title = serializers.CharField(source='job.title', read_only=True)
+    company = serializers.CharField(source='job.company', read_only=True)
+
+    class Meta:
+        from .models import AnalysisResult
+        model = AnalysisResult
+        fields = ['id', 'ats_score', 'job_title', 'company', 'created_at']
+

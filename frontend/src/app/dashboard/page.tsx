@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 
 import { Sidebar } from '@/components/Sidebar'
 import { PageHeader } from '@/components/PageHeader'
-import { api } from '@/lib/api'
+// ... existing imports
+import { api, AnalysisResult } from '@/lib/api'
 
 type Resume = { id: number; title: string; created_at: string }
 type Job = { id: number; company: string; role: string }
@@ -14,6 +15,8 @@ export default function DashboardPage() {
   const [apps, setApps] = useState<App[]>([])
   const [resumes, setResumes] = useState<Resume[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
+  const [analyses, setAnalyses] = useState<AnalysisResult[]>([])
+
   const [uploadTitle, setUploadTitle] = useState('')
   const [uploading, setUploading] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -24,15 +27,17 @@ export default function DashboardPage() {
 
   const loadData = async () => {
     try {
-      const [aRes, rRes, jRes] = await Promise.all([
+      const [aRes, rRes, jRes, anRes] = await Promise.all([
         api.get('/api/applications/'),
         api.get('/api/resumes/'),
         api.get('/api/jobs/'),
+        api.get('/api/analysis-results/'),
       ])
 
       setApps(aRes.data.results || [])
       setResumes(rRes.data.results || [])
       setJobs(jRes.data.results || [])
+      setAnalyses(anRes.data.results || [])
     } catch (err) {
       console.error('Failed to load dashboard data', err)
     }
@@ -193,6 +198,34 @@ export default function DashboardPage() {
                       </div>
                     </>
                   )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Past Analyses */}
+        <div className="panel mb-6">
+          <h2 className="text-lg font-semibold mb-4" style={{ color: '#0F172A' }}>Past Analyses</h2>
+          {analyses.length === 0 ? (
+            <p className="text-sm" style={{ color: '#94A3B8' }}>No analyses run yet. Go to Optimizer to start.</p>
+          ) : (
+            <div className="space-y-3">
+              {analyses.slice(0, 5).map((a) => (
+                <div key={a.id} className="flex items-center justify-between rounded-lg border px-4 py-3" style={{ borderColor: '#E2E8F0' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg font-bold text-sm"
+                      style={{
+                        background: a.ats_score >= 75 ? '#DCFCE7' : a.ats_score >= 50 ? '#FEF3C7' : '#FEE2E2',
+                        color: a.ats_score >= 75 ? '#16A34A' : a.ats_score >= 50 ? '#D97706' : '#DC2626'
+                      }}>
+                      {a.ats_score}%
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{a.job_title}</p>
+                      <p className="text-xs" style={{ color: '#94A3B8' }}>{a.company} • {new Date(a.created_at).toLocaleDateString()}</p>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
