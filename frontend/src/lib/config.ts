@@ -7,3 +7,4 @@ const getBaseUrl = () => {
 }
 
 export const API_BASE_URL = getBaseUrl()
+console.log('🔌 API_BASE_URL Configured as:', API_BASE_URL, 'Raw Env:', process.env.NEXT_PUBLIC_API_URL)
