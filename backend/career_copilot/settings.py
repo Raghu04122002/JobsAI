@@ -77,8 +77,9 @@ USE_I18N = True
 USE_TZ = True
 
 # Static Files (WhiteNoise)
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+# Static Files (WhiteNoise)
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
