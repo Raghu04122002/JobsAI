@@ -1,50 +1,71 @@
 'use client'
 
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 import { API_BASE_URL } from './config'
 import { clearTokens, getAccessToken, getRefreshToken, setTokens } from './auth'
 
-async function refreshAccessToken(): Promise<string | null> {
-  const refresh = getRefreshToken()
-  if (!refresh) return null
-
-  const res = await fetch(`${API_BASE_URL}/token/refresh/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh }),
-  })
-
-  if (!res.ok) {
-    clearTokens()
-    return null
-  }
-
-  const data = await res.json()
-  setTokens(data.access, data.refresh || refresh)
-  return data.access
-}
-
-export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
-  const token = getAccessToken()
-
-  const headers: Record<string, string> = {
+// Create axios instance
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
     'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string> | undefined),
-  }
+  },
+})
 
-  if (token) headers.Authorization = `Bearer ${token}`
-
-  let response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers,
-  })
-
-  if (response.status === 401 && token) {
-    const newToken = await refreshAccessToken()
-    if (newToken) {
-      headers.Authorization = `Bearer ${newToken}`
-      response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers })
+// Request interceptor to add auth token
+api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const token = getAccessToken()
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
     }
-  }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
 
-  return response
-}
+// Response interceptor to handle token refresh
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true
+
+      try {
+        const refreshToken = getRefreshToken()
+        if (!refreshToken) {
+          throw new Error('No refresh token available')
+        }
+
+        // Use axios directly to avoid interceptor loop
+        const response = await axios.post(`${API_BASE_URL}/api/token/refresh/`, {
+          refresh: refreshToken,
+        })
+
+        const { access } = response.data
+        // Save new tokens
+        setTokens(access, response.data.refresh || refreshToken)
+
+        // Update authorization header
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${access}`
+        }
+
+        // Retry original request
+        return api(originalRequest)
+      } catch (refreshError) {
+        // Refresh failed (token expired or invalid)
+        clearTokens()
+        // Optional: Redirect to login or handle session expiry
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login'
+        }
+        return Promise.reject(refreshError)
+      }
+    }
+
+    return Promise.reject(error)
+  }
+)

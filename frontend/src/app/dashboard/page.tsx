@@ -4,9 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { Sidebar } from '@/components/Sidebar'
 import { PageHeader } from '@/components/PageHeader'
-import { apiFetch } from '@/lib/api'
-import { getAccessToken } from '@/lib/auth'
-import { API_BASE_URL } from '@/lib/config'
+import { api } from '@/lib/api'
 
 type Resume = { id: number; title: string; created_at: string }
 type Job = { id: number; company: string; role: string }
@@ -25,15 +23,19 @@ export default function DashboardPage() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   const loadData = async () => {
-    const [aRes, rRes, jRes] = await Promise.all([
-      apiFetch('/applications/'),
-      apiFetch('/resumes/'),
-      apiFetch('/jobs/'),
-    ])
+    try {
+      const [aRes, rRes, jRes] = await Promise.all([
+        api.get('/api/applications/'),
+        api.get('/api/resumes/'),
+        api.get('/api/jobs/'),
+      ])
 
-    if (aRes.ok) { const d = await aRes.json(); setApps(d.results || []) }
-    if (rRes.ok) { const d = await rRes.json(); setResumes(d.results || []) }
-    if (jRes.ok) { const d = await jRes.json(); setJobs(d.results || []) }
+      setApps(aRes.data.results || [])
+      setResumes(rRes.data.results || [])
+      setJobs(jRes.data.results || [])
+    } catch (err) {
+      console.error('Failed to load dashboard data', err)
+    }
   }
 
   useEffect(() => { loadData() }, [])
@@ -45,30 +47,41 @@ export default function DashboardPage() {
     const form = new FormData()
     form.append('title', uploadTitle.trim() || file.name.replace(/\.[^/.]+$/, ''))
     form.append('file', file)
-    const token = getAccessToken()
-    await fetch(`${API_BASE_URL}/resumes/`, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: form,
-    })
-    setUploadTitle('')
-    if (fileRef.current) fileRef.current.value = ''
-    setUploading(false)
-    await loadData()
+
+    try {
+      await api.post('/api/resumes/', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setUploadTitle('')
+      if (fileRef.current) fileRef.current.value = ''
+      await loadData()
+    } catch (err) {
+      console.error('Upload failed', err)
+    } finally {
+      setUploading(false)
+    }
   }
 
   const startEdit = (r: Resume) => { setEditingId(r.id); setEditTitle(r.title) }
 
   const saveEdit = async (id: number) => {
-    await apiFetch(`/resumes/${id}/`, { method: 'PATCH', body: JSON.stringify({ title: editTitle }) })
-    setEditingId(null)
-    await loadData()
+    try {
+      await api.patch(`/api/resumes/${id}/`, { title: editTitle })
+      setEditingId(null)
+      await loadData()
+    } catch (err) {
+      console.error('Failed to save edit', err)
+    }
   }
 
   const deleteResume = async (id: number) => {
-    await apiFetch(`/resumes/${id}/`, { method: 'DELETE' })
-    setConfirmingDeleteId(null)
-    await loadData()
+    try {
+      await api.delete(`/api/resumes/${id}/`)
+      setConfirmingDeleteId(null)
+      await loadData()
+    } catch (err) {
+      console.error('Failed to delete resume', err)
+    }
   }
 
   const interviews = apps.filter(a => a.status === 'interview').length

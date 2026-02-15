@@ -4,9 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from 'react'
 
 import { Sidebar } from '@/components/Sidebar'
 import { PageHeader } from '@/components/PageHeader'
-import { apiFetch } from '@/lib/api'
-import { getAccessToken } from '@/lib/auth'
-import { API_BASE_URL } from '@/lib/config'
+import { api } from '@/lib/api'
 
 type Resume = { id: number; title: string; created_at: string }
 
@@ -19,10 +17,12 @@ export default function ResumePage() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   const load = async () => {
-    const res = await apiFetch('/resumes/')
-    if (!res.ok) return
-    const data = await res.json()
-    setResumes(data.results || [])
+    try {
+      const res = await api.get('/api/resumes/')
+      setResumes(res.data.results || [])
+    } catch (err) {
+      console.error('Failed to load resumes', err)
+    }
   }
 
   useEffect(() => { load() }, [])
@@ -38,30 +38,35 @@ export default function ResumePage() {
     form.append('title', resolvedTitle)
     form.append('file', file)
 
-    const token = getAccessToken()
-    const res = await fetch(`${API_BASE_URL}/resumes/`, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: form,
-    })
+    try {
+      await api.post('/api/resumes/', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
 
-    if (!res.ok) {
-      const payload = await res.json().catch(() => null)
+      setTitle('')
+      setFile(null)
+      if (fileRef.current) fileRef.current.value = ''
+      await load()
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      const payload = err.response?.data
       setError(payload?.detail || payload?.title?.[0] || 'Resume upload failed.')
+    } finally {
       setUploading(false)
-      return
     }
 
     setTitle('')
     setFile(null)
     if (fileRef.current) fileRef.current.value = ''
-    setUploading(false)
-    await load()
+
   }
 
   const deleteResume = async (id: number) => {
-    await apiFetch(`/resumes/${id}/`, { method: 'DELETE' })
-    await load()
+    try {
+      await api.delete(`/api/resumes/${id}/`)
+      await load()
+    } catch (err) {
+      console.error('Failed to delete resume', err)
+    }
   }
 
   return (

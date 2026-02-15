@@ -4,7 +4,7 @@ import { FormEvent, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-import { API_BASE_URL } from '@/lib/config'
+import { api } from '@/lib/api'
 import { setTokens } from '@/lib/auth'
 
 export default function LoginPage() {
@@ -17,20 +17,13 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
 
-    const res = await fetch(`${API_BASE_URL}/token/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ login, password }),
-    })
-
-    if (!res.ok) {
+    try {
+      const res = await api.post('/api/token/', { login, password })
+      setTokens(res.data.access, res.data.refresh)
+      router.push('/dashboard')
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       setError('Invalid credentials. Please check your email and password.')
-      return
     }
-
-    const data = await res.json()
-    setTokens(data.access, data.refresh)
-    router.push('/dashboard')
   }
 
   return (

@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from 'react'
 
 import { Sidebar } from '@/components/Sidebar'
 import { PageHeader } from '@/components/PageHeader'
-import { apiFetch } from '@/lib/api'
+import { api } from '@/lib/api'
 
 type Resume = { id: number; title: string }
 type Job = { id: number; company: string; role: string }
@@ -30,24 +30,25 @@ export default function OptimizerPage() {
   const [loading, setLoading] = useState(false)
 
   const loadData = async (keepSelections = false) => {
-    const [resumeRes, jobsRes] = await Promise.all([apiFetch('/resumes/'), apiFetch('/jobs/')])
+    try {
+      const [resumeRes, jobsRes] = await Promise.all([
+        api.get('/api/resumes/'),
+        api.get('/api/jobs/')
+      ])
 
-    if (resumeRes.ok) {
-      const data = await resumeRes.json()
-      const list = data.results || []
-      setResumes(list)
+      const resumesList = resumeRes.data.results || []
+      setResumes(resumesList)
       if (!keepSelections) {
-        setSelectedResume((prev) => (!prev && list.length > 0 ? list[0].id : prev))
+        setSelectedResume((prev) => (!prev && resumesList.length > 0 ? resumesList[0].id : prev))
       }
-    }
 
-    if (jobsRes.ok) {
-      const data = await jobsRes.json()
-      const list = data.results || []
-      setJobs(list)
+      const jobsList = jobsRes.data.results || []
+      setJobs(jobsList)
       if (!keepSelections) {
-        setSelectedJob((prev) => (!prev && list.length > 0 ? list[0].id : prev))
+        setSelectedJob((prev) => (!prev && jobsList.length > 0 ? jobsList[0].id : prev))
       }
+    } catch (err) {
+      console.error('Failed to load data', err)
     }
   }
 
@@ -62,17 +63,14 @@ export default function OptimizerPage() {
     }
     setLoading(true)
     try {
-      const res = await apiFetch('/copilot/match/', {
-        method: 'POST',
-        body: JSON.stringify({ resume_id: selectedResume, job_id: selectedJob }),
+      const res = await api.post('/api/copilot/match/', {
+        resume_id: selectedResume,
+        job_id: selectedJob
       })
-      if (!res.ok) {
-        const payload = await res.json().catch(() => null)
-        setError(payload?.detail || 'Match generation failed.')
-        return
-      }
-      const data = await res.json()
-      setResult(data)
+      setResult(res.data)
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      const payload = err.response?.data
+      setError(payload?.detail || 'Match generation failed.')
     } finally {
       setLoading(false)
     }

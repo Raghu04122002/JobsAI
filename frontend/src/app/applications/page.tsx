@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from 'react'
 
 import { Sidebar } from '@/components/Sidebar'
 import { PageHeader } from '@/components/PageHeader'
-import { apiFetch } from '@/lib/api'
+import { api } from '@/lib/api'
 
 type Application = {
   id: number
@@ -43,27 +43,32 @@ export default function ApplicationsPage() {
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<number | null>(null)
 
   const load = async () => {
-    const res = await apiFetch('/applications/')
-    if (!res.ok) return
-    const data = await res.json()
-    setApplications(data.results || [])
+    try {
+      const res = await api.get('/api/applications/')
+      setApplications(res.data.results || [])
+    } catch (err) {
+      console.error('Failed to load applications', err)
+    }
   }
 
   useEffect(() => { load() }, [])
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    await apiFetch('/applications/', {
-      method: 'POST',
-      body: JSON.stringify({ company, role, status, applied_date: appliedDate, notes }),
-    })
-    setCompany('')
-    setRole('')
-    setStatus('APPLIED')
-    setAppliedDate('')
-    setNotes('')
-    setShowForm(false)
-    await load()
+    try {
+      await api.post('/api/applications/', {
+        company, role, status, applied_date: appliedDate, notes
+      })
+      setCompany('')
+      setRole('')
+      setStatus('APPLIED')
+      setAppliedDate('')
+      setNotes('')
+      setShowForm(false)
+      await load()
+    } catch (err) {
+      console.error('Failed to create application', err)
+    }
   }
 
   const startEdit = (app: Application) => {
@@ -78,24 +83,29 @@ export default function ApplicationsPage() {
   const cancelEdit = () => setEditingId(null)
 
   const saveEdit = async (id: number) => {
-    await apiFetch(`/applications/${id}/`, {
-      method: 'PUT',
-      body: JSON.stringify({
+    try {
+      await api.put(`/api/applications/${id}/`, {
         company: editCompany,
         role: editRole,
         status: editStatus,
         applied_date: editAppliedDate,
         notes: editNotes,
-      }),
-    })
-    setEditingId(null)
-    await load()
+      })
+      setEditingId(null)
+      await load()
+    } catch (err) {
+      console.error('Failed to save application', err)
+    }
   }
 
   const deleteApplication = async (id: number) => {
-    await apiFetch(`/applications/${id}/`, { method: 'DELETE' })
-    setConfirmingDeleteId(null)
-    await load()
+    try {
+      await api.delete(`/api/applications/${id}/`)
+      setConfirmingDeleteId(null)
+      await load()
+    } catch (err) {
+      console.error('Failed to delete application', err)
+    }
   }
 
   return (

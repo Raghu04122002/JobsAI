@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 
 import { Sidebar } from '@/components/Sidebar'
 import { PageHeader } from '@/components/PageHeader'
-import { apiFetch } from '@/lib/api'
+import { api } from '@/lib/api'
 
 type Job = { id: number; company: string; role: string; description?: string }
 type Resume = { id: number; title: string; file_name: string }
@@ -65,23 +65,17 @@ export default function TailorPage() {
     const loadData = async () => {
       try {
         const [jobsRes, resumesRes] = await Promise.all([
-          apiFetch('/jobs/'),
-          apiFetch('/resumes/')
+          api.get('/api/jobs/'),
+          api.get('/api/resumes/')
         ])
 
-        if (jobsRes.ok) {
-          const data = await jobsRes.json()
-          const list = data.results || []
-          setJobs(list)
-          if (list.length > 0) setSelectedJob(list[0].id)
-        }
+        const jobsList = jobsRes.data.results || []
+        setJobs(jobsList)
+        if (jobsList.length > 0) setSelectedJob(jobsList[0].id)
 
-        if (resumesRes.ok) {
-          const data = await resumesRes.json()
-          const list = data.results || []
-          setResumes(list)
-          if (list.length > 0) setSelectedResume(list[0].id)
-        }
+        const resumesList = resumesRes.data.results || []
+        setResumes(resumesList)
+        if (resumesList.length > 0) setSelectedResume(resumesList[0].id)
       } catch (err) {
         console.error('Failed to load initial data', err)
       }
@@ -98,16 +92,12 @@ export default function TailorPage() {
 
     try {
       // Send IDs to backend for precise tailoring
-      const res = await apiFetch('/copilot/tailor/', {
-        method: 'POST',
-        body: JSON.stringify({
-          resume_id: selectedResume,
-          job_id: selectedJob,
-          top_k: 8
-        }),
+      const res = await api.post('/api/copilot/tailor/', {
+        resume_id: selectedResume,
+        job_id: selectedJob,
+        top_k: 8
       })
-      const data = await res.json()
-      setTailorResult(parseTailorResponse(data))
+      setTailorResult(parseTailorResponse(res.data))
     } catch (err) {
       console.error('Tailoring failed', err)
     } finally {

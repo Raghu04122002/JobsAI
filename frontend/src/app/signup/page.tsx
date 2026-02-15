@@ -4,7 +4,7 @@ import { FormEvent, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-import { API_BASE_URL } from '@/lib/config'
+import { api } from '@/lib/api'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -23,19 +23,18 @@ export default function SignupPage() {
       return
     }
 
-    const res = await fetch(`${API_BASE_URL}/auth/signup/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, username, password, confirm_password: confirmPassword }),
-    })
-
-    if (!res.ok) {
-      const payload = await res.json().catch(() => null)
+    try {
+      await api.post('/api/auth/signup/', {
+        email,
+        username,
+        password,
+        confirm_password: confirmPassword
+      })
+      router.push('/login')
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      const payload = err.response?.data
       setError(payload?.email?.[0] || payload?.username?.[0] || payload?.password?.[0] || 'Signup failed. Please try again.')
-      return
     }
-
-    router.push('/login')
   }
 
   return (

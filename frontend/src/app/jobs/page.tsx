@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from 'react'
 
 import { Sidebar } from '@/components/Sidebar'
 import { PageHeader } from '@/components/PageHeader'
-import { apiFetch } from '@/lib/api'
+import { api } from '@/lib/api'
 
 type Job = { id: number; company: string; role: string; description?: string }
 
@@ -17,10 +17,12 @@ export default function JobsPage() {
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<number | null>(null)
 
   const load = async () => {
-    const res = await apiFetch('/jobs/')
-    if (!res.ok) return
-    const data = await res.json()
-    setJobs(data.results || [])
+    try {
+      const res = await api.get('/api/jobs/')
+      setJobs(res.data.results || [])
+    } catch (err) {
+      console.error('Failed to load jobs', err)
+    }
   }
 
   useEffect(() => { load() }, [])
@@ -28,27 +30,28 @@ export default function JobsPage() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
-    const res = await apiFetch('/jobs/', {
-      method: 'POST',
-      body: JSON.stringify({ company, role, description }),
-    })
 
-    if (!res.ok) {
-      const payload = await res.json().catch(() => null)
+    try {
+      await api.post('/api/jobs/', { company, role, description })
+
+      setCompany('')
+      setRole('')
+      setDescription('')
+      await load()
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      const payload = err.response?.data
       setError(payload?.detail || payload?.company?.[0] || payload?.role?.[0] || payload?.description?.[0] || 'Failed to save job.')
-      return
     }
-
-    setCompany('')
-    setRole('')
-    setDescription('')
-    await load()
   }
 
   const deleteJob = async (id: number) => {
-    await apiFetch(`/jobs/${id}/`, { method: 'DELETE' })
-    setConfirmingDeleteId(null)
-    await load()
+    try {
+      await api.delete(`/api/jobs/${id}/`)
+      setConfirmingDeleteId(null)
+      await load()
+    } catch (err) {
+      console.error('Failed to delete job', err)
+    }
   }
 
   return (
