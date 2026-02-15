@@ -216,10 +216,10 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg font-bold text-sm"
                       style={{
-                        background: a.ats_score >= 75 ? '#DCFCE7' : a.ats_score >= 50 ? '#FEF3C7' : '#FEE2E2',
-                        color: a.ats_score >= 75 ? '#16A34A' : a.ats_score >= 50 ? '#D97706' : '#DC2626'
+                        background: a.match_score >= 75 ? '#DCFCE7' : a.match_score >= 50 ? '#FEF3C7' : '#FEE2E2',
+                        color: a.match_score >= 75 ? '#16A34A' : a.match_score >= 50 ? '#D97706' : '#DC2626'
                       }}>
-                      {a.ats_score}%
+                      {a.match_score}%
                     </div>
                     <div>
                       <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{a.job_title}</p>

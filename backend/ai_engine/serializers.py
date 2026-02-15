@@ -25,5 +25,5 @@ class AnalysisResultSerializer(serializers.ModelSerializer):
     class Meta:
         from .models import AnalysisResult
         model = AnalysisResult
-        fields = ['id', 'ats_score', 'job_title', 'company', 'created_at']
+        fields = ['id', 'match_score', 'job_title', 'company', 'created_at']
 

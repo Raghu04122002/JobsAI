@@ -73,7 +73,7 @@ api.interceptors.response.use(
 
 export interface AnalysisResult {
   id: number
-  ats_score: number
+  match_score: number
   job_title: string
   company: string
   created_at: string

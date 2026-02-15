@@ -74,10 +74,9 @@ class CopilotViewSet(viewsets.ViewSet):
             user=request.user,
             resume=resume,
             job=job,
-            ats_score=data.get('ats_score', 0),
+            match_score=data.get('match_score', 0),
             matched_keywords=data.get('matched_keywords', []),
             missing_keywords=data.get('missing_keywords', []),
-            skill_gaps=data.get('skill_gaps', [])
         )
 
         return response.Response(data, status=status.HTTP_200_OK)
