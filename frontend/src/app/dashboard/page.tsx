@@ -22,8 +22,23 @@ export default function DashboardPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<number | null>(null)
+  const [viewingAnalysis, setViewingAnalysis] = useState<AnalysisResult | null>(null)
 
   const fileRef = useRef<HTMLInputElement>(null)
+
+
+
+  // ... existing methods ...
+
+  const deleteAnalysis = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this analysis?')) return
+    try {
+      await api.delete(`/api/analysis-results/${id}/`)
+      setAnalyses(prev => prev.filter(a => a.id !== id))
+    } catch (err) {
+      console.error('Failed to delete analysis', err)
+    }
+  }
 
   const loadData = async () => {
     try {
@@ -212,7 +227,7 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-3">
               {analyses.slice(0, 5).map((a) => (
-                <div key={a.id} className="flex items-center justify-between rounded-lg border px-4 py-3" style={{ borderColor: '#E2E8F0' }}>
+                <div key={a.id} className="flex items-center justify-between rounded-lg border px-4 py-3 bg-white hover:bg-slate-50 transition-colors" style={{ borderColor: '#E2E8F0' }}>
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg font-bold text-sm"
                       style={{
@@ -226,11 +241,129 @@ export default function DashboardPage() {
                       <p className="text-xs" style={{ color: '#94A3B8' }}>{a.company} • {new Date(a.created_at).toLocaleDateString()}</p>
                     </div>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setViewingAnalysis(a)}
+                      className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                      title="View Details"
+                    >
+                      <span className="text-lg">👁️</span>
+                    </button>
+                    <button
+                      onClick={() => deleteAnalysis(a.id)}
+                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete Analysis"
+                    >
+                      <span className="text-lg">🗑️</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </div>
+
+        {/* Analysis Details Modal */}
+        {viewingAnalysis && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setViewingAnalysis(null)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">{viewingAnalysis.job_title} at {viewingAnalysis.company}</h3>
+                  <p className="text-sm text-slate-500">Analysis from {new Date(viewingAnalysis.created_at).toLocaleDateString()}</p>
+                </div>
+                <button onClick={() => setViewingAnalysis(null)} className="p-2 hover:bg-slate-100 rounded-lg">
+                  <span className="text-xl">✕</span>
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 overflow-y-auto space-y-6">
+
+                {/* Score */}
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full text-2xl font-bold bg-white shadow-sm"
+                    style={{
+                      color: viewingAnalysis.match_score >= 75 ? '#16A34A' : viewingAnalysis.match_score >= 50 ? '#D97706' : '#DC2626'
+                    }}>
+                    {viewingAnalysis.match_score}%
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-slate-900">Match Score</h4>
+                    <p className="text-sm text-slate-600">
+                      {viewingAnalysis.match_score >= 75 ? 'Strong match! Your resume is well-aligned.' :
+                        viewingAnalysis.match_score >= 50 ? 'Decent match, but room for improvement.' :
+                          'Low match. Consider significant tailoring.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Keywords Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-green-500" /> Matched Keywords
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {viewingAnalysis.matched_keywords?.length > 0 ? (
+                        viewingAnalysis.matched_keywords.map((kw, i) => (
+                          <span key={i} className="px-2 py-1 rounded-md bg-green-50 text-green-700 text-xs font-medium border border-green-100">
+                            {kw}
+                          </span>
+                        ))
+                      ) : (
+                        <p className="text-xs text-slate-400 italic">No specific keywords matched.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-red-500" /> Missing Keywords
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {viewingAnalysis.missing_keywords?.length > 0 ? (
+                        viewingAnalysis.missing_keywords.map((kw, i) => (
+                          <span key={i} className="px-2 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium border border-red-100">
+                            {kw}
+                          </span>
+                        ))
+                      ) : (
+                        <p className="text-xs text-green-600 italic">Great job! No major keywords missing.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Suggestions */}
+                {viewingAnalysis.improvement_suggestions?.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900 mb-3">AI Suggestions</h4>
+                    <ul className="space-y-2">
+                      {viewingAnalysis.improvement_suggestions.map((s, i) => (
+                        <li key={i} className="flex gap-3 text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                          <span className="text-indigo-500 font-bold">•</span>
+                          {s}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+                <button onClick={() => setViewingAnalysis(null)} className="btn-secondary">
+                  Close
+                </button>
+              </div>
+
+            </div>
+          </div>
+        )}
 
         {/* Recent Jobs */}
         <div className="panel">

@@ -74,15 +74,16 @@ api.interceptors.response.use(
 export interface AnalysisResult {
   id: number
   match_score: number
+  matched_keywords: string[]
+  missing_keywords: string[]
+  improvement_suggestions: string[]
   job_title: string
   company: string
   created_at: string
 }
 
-export const getAnalysisResults = async (): Promise<AnalysisResult[]> => {
-  const response = await api.get('/api/analysis-results/')
-  return response.data
-}
+export const getAnalysisResults = () => api.get<{ results: AnalysisResult[] }>('/api/analysis-results/')
+export const deleteAnalysisResult = (id: number) => api.delete(`/api/analysis-results/${id}/`)
 
 // Update MatchResponse type if it exists, or just ensure the call site handles it
 // Ideally we should export the types from a shared file or here

@@ -1,4 +1,4 @@
-from rest_framework import permissions, response, status, viewsets
+from rest_framework import permissions, response, status, viewsets, mixins
 from rest_framework.decorators import action
 
 from jobs.models import JobDescription
@@ -77,12 +77,13 @@ class CopilotViewSet(viewsets.ViewSet):
             match_score=data.get('match_score', 0),
             matched_keywords=data.get('matched_keywords', []),
             missing_keywords=data.get('missing_keywords', []),
+            improvement_suggestions=data.get('improvement_suggestions', []),
         )
 
         return response.Response(data, status=status.HTTP_200_OK)
 
 
-class AnalysisResultViewSet(viewsets.ReadOnlyModelViewSet):
+class AnalysisResultViewSet(mixins.DestroyModelMixin, viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = AnalysisResultSerializer
 

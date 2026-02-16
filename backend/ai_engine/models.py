@@ -12,6 +12,7 @@ class AnalysisResult(models.Model):
     # Using JSONField to store arrays of strings
     matched_keywords = models.JSONField(default=list)
     missing_keywords = models.JSONField(default=list)
+    improvement_suggestions = models.JSONField(default=list)
     
     created_at = models.DateTimeField(auto_now_add=True)
 
