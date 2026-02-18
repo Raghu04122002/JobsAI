@@ -12,6 +12,8 @@ type Application = {
   role: string
   status: string
   applied_date: string
+  match_score: number
+  job_link: string
   notes: string
 }
 
@@ -29,6 +31,8 @@ export default function ApplicationsPage() {
   const [role, setRole] = useState('')
   const [status, setStatus] = useState('APPLIED')
   const [appliedDate, setAppliedDate] = useState('')
+  const [matchScore, setMatchScore] = useState('')
+  const [jobLink, setJobLink] = useState('')
   const [notes, setNotes] = useState('')
   const [applications, setApplications] = useState<Application[]>([])
   const [showForm, setShowForm] = useState(false)
@@ -38,6 +42,8 @@ export default function ApplicationsPage() {
   const [editRole, setEditRole] = useState('')
   const [editStatus, setEditStatus] = useState('APPLIED')
   const [editAppliedDate, setEditAppliedDate] = useState('')
+  const [editMatchScore, setEditMatchScore] = useState('')
+  const [editJobLink, setEditJobLink] = useState('')
   const [editNotes, setEditNotes] = useState('')
 
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<number | null>(null)
@@ -57,12 +63,16 @@ export default function ApplicationsPage() {
     e.preventDefault()
     try {
       await api.post('/api/applications/', {
-        company, role, status, applied_date: appliedDate, notes
+        company, role, status, applied_date: appliedDate, notes,
+        match_score: matchScore ? parseInt(matchScore) : 0,
+        job_link: jobLink
       })
       setCompany('')
       setRole('')
       setStatus('APPLIED')
       setAppliedDate('')
+      setMatchScore('')
+      setJobLink('')
       setNotes('')
       setShowForm(false)
       await load()
@@ -77,6 +87,8 @@ export default function ApplicationsPage() {
     setEditRole(app.role)
     setEditStatus(app.status)
     setEditAppliedDate(app.applied_date)
+    setEditMatchScore(app.match_score.toString())
+    setEditJobLink(app.job_link)
     setEditNotes(app.notes)
   }
 
@@ -89,6 +101,8 @@ export default function ApplicationsPage() {
         role: editRole,
         status: editStatus,
         applied_date: editAppliedDate,
+        match_score: editMatchScore ? parseInt(editMatchScore) : 0,
+        job_link: editJobLink,
         notes: editNotes,
       })
       setEditingId(null)
@@ -123,7 +137,7 @@ export default function ApplicationsPage() {
           <div className="panel mb-6">
             <h2 className="text-lg font-semibold mb-4" style={{ color: '#0F172A' }}>New Application</h2>
             <form onSubmit={onSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1.5" style={{ color: '#374151' }}>Company</label>
                   <input className="input" placeholder="e.g. Google" value={company} onChange={(e) => setCompany(e.target.value)} />
@@ -141,6 +155,14 @@ export default function ApplicationsPage() {
                 <div>
                   <label className="block text-sm font-medium mb-1.5" style={{ color: '#374151' }}>Applied Date</label>
                   <input className="input" type="date" value={appliedDate} onChange={(e) => setAppliedDate(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: '#374151' }}>Match Score</label>
+                  <input className="input" type="number" placeholder="0-100" value={matchScore} onChange={(e) => setMatchScore(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: '#374151' }}>Job Link</label>
+                  <input className="input" placeholder="https://..." value={jobLink} onChange={(e) => setJobLink(e.target.value)} />
                 </div>
               </div>
               <div>
@@ -169,6 +191,8 @@ export default function ApplicationsPage() {
                     <th>Role</th>
                     <th>Status</th>
                     <th>Date</th>
+                    <th>Score</th>
+                    <th>Link</th>
                     <th>Notes</th>
                     <th className="text-right">Actions</th>
                   </tr>
@@ -186,6 +210,8 @@ export default function ApplicationsPage() {
                             </select>
                           </td>
                           <td><input className="input text-xs" type="date" value={editAppliedDate} onChange={(e) => setEditAppliedDate(e.target.value)} /></td>
+                          <td><input className="input text-xs w-16" type="number" value={editMatchScore} onChange={(e) => setEditMatchScore(e.target.value)} /></td>
+                          <td><input className="input text-xs" value={editJobLink} onChange={(e) => setEditJobLink(e.target.value)} /></td>
                           <td><input className="input text-xs" value={editNotes} onChange={(e) => setEditNotes(e.target.value)} /></td>
                           <td className="text-right">
                             <div className="flex justify-end gap-1">
@@ -200,6 +226,20 @@ export default function ApplicationsPage() {
                           <td>{a.role}</td>
                           <td><span className={`badge ${statusBadge[a.status] || 'badge-gray'}`}>{a.status}</span></td>
                           <td style={{ color: '#64748B' }}>{a.applied_date}</td>
+                          <td>
+                            {a.match_score > 0 ? (
+                              <span className={`font-bold ${a.match_score >= 75 ? 'text-green-600' : a.match_score >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                {a.match_score}%
+                              </span>
+                            ) : <span className="text-gray-400">-</span>}
+                          </td>
+                          <td>
+                            {a.job_link && (
+                              <a href={a.job_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">
+                                🔗
+                              </a>
+                            )}
+                          </td>
                           <td className="max-w-[200px] truncate" style={{ color: '#64748B' }}>{a.notes || '—'}</td>
                           <td className="text-right">
                             <div className="flex justify-end gap-1">

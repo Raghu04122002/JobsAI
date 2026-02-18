@@ -13,6 +13,8 @@ class Application(models.Model):
     role = models.CharField(max_length=255)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.APPLIED)
     applied_date = models.DateField()
+    match_score = models.IntegerField(default=0, help_text="Match Score (0-100)")
+    job_link = models.URLField(max_length=500, blank=True)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
