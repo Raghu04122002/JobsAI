@@ -6,8 +6,8 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
-DEBUG = False
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
+DEBUG = os.environ.get("DJANGO_DEBUG", "False").lower() in ("true", "1", "yes")
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -127,7 +127,7 @@ CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [u.strip() for u in os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000').split(',') if u.strip()]
 
 # Security Settings for Production
-DEBUG = False  # Explicitly set to False for production
+# Security settings only apply in production (non-DEBUG mode)
 
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
