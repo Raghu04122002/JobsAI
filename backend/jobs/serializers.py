@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class JobDescriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobDescription
-        fields = ('id', 'user', 'company', 'role', 'description', 'created_at')
+        fields = ('id', 'user', 'company', 'role', 'description', 'location', 'apply_url', 'source', 'created_at')
         read_only_fields = ('id', 'user', 'created_at')
 
     def create(self, validated_data):

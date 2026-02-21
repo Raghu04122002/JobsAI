@@ -10,7 +10,7 @@ from accounts.token_views import LoginTokenObtainPairView
 from applications.views import ApplicationViewSet
 from ai_engine.views import CopilotViewSet, AnalysisResultViewSet
 from chat.views import ChatSessionViewSet
-from jobs.views import JobDescriptionViewSet
+from jobs.views import JobDescriptionViewSet, AutoImportJobsView
 from resumes.views import ResumeViewSet
 
 router = DefaultRouter()
@@ -27,6 +27,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/token/', LoginTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/jobs/auto-import/', AutoImportJobsView.as_view(), name='auto-import-jobs'),
     path('api/', include(router.urls)),
 ]
 

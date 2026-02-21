@@ -6,6 +6,9 @@ class JobDescription(models.Model):
     company = models.CharField(max_length=255)
     role = models.CharField(max_length=255)
     description = models.TextField()
+    location = models.CharField(max_length=255, blank=True, default='')
+    apply_url = models.URLField(max_length=1024, blank=True, default='')
+    source = models.CharField(max_length=100, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -14,3 +17,4 @@ class JobDescription(models.Model):
 
     def __str__(self):
         return f'{self.company} - {self.role}'
+
