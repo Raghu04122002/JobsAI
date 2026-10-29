@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 
 import { api } from '@/lib/api'
 
+const SIGNUP_TIMEOUT_MS = 60_000
+
 export default function SignupPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
@@ -13,6 +15,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -23,17 +26,33 @@ export default function SignupPage() {
       return
     }
 
+    setSubmitting(true)
     try {
-      await api.post('/api/auth/signup/', {
-        email,
-        username,
-        password,
-        confirm_password: confirmPassword
-      })
+      await api.post(
+        '/api/auth/signup/',
+        {
+          email,
+          username,
+          password,
+          confirm_password: confirmPassword
+        },
+        // Render free tier can take ~50s to wake up; give it time, but don't hang forever.
+        { timeout: SIGNUP_TIMEOUT_MS }
+      )
       router.push('/login')
     } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-      const payload = err.response?.data
-      setError(payload?.email?.[0] || payload?.username?.[0] || payload?.password?.[0] || 'Signup failed. Please try again.')
+      if (err.code === 'ECONNABORTED' || err.code === 'ETIMEDOUT') {
+        setError('The server took too long to respond. It may be starting up. Please try again in a minute.')
+      } else if (!err.response) {
+        setError('Could not reach the server. Check your connection or try again shortly.')
+      } else if (err.response.status >= 500) {
+        setError('The server hit an error while creating your account. Please try again later.')
+      } else {
+        const payload = err.response.data
+        setError(payload?.email?.[0] || payload?.username?.[0] || payload?.password?.[0] || 'Signup failed. Please try again.')
+      }
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -93,7 +112,9 @@ export default function SignupPage() {
               </div>
             )}
 
-            <button className="btn w-full" type="submit">Create account</button>
+            <button className="btn w-full" type="submit" disabled={submitting} aria-busy={submitting}>
+              {submitting ? 'Creating account…' : 'Create account'}
+            </button>
           </form>
 
           <p className="mt-6 text-center text-sm" style={{ color: '#64748B' }}>

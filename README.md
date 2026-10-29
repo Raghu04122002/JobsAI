@@ -107,7 +107,13 @@ DJANGO_SECRET_KEY=your-secure-random-key
 POSTGRES_DB=
 POSTGRES_USER=
 POSTGRES_PASSWORD=
+
+# Production only — Supabase session pooler (port 5432); leave unset locally
+# DATABASE_URL=postgresql://postgres.<project-ref>:<YOUR-PASSWORD>@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require
 ```
+
+> **Production database:** the deployed backend uses Supabase Postgres via `DATABASE_URL`
+> (session pooler, port 5432, `?sslmode=require`). See [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ### 3. Build and run
 

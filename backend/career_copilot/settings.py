@@ -3,10 +3,13 @@ import dj_database_url
 from datetime import timedelta
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
-DEBUG = os.environ.get("DJANGO_DEBUG", "False").lower() in ("true", "1", "yes")
+# Accept DJANGO_DEBUG (docker-compose) or DEBUG (Render env var).
+DEBUG = os.environ.get("DJANGO_DEBUG", os.environ.get("DEBUG", "False")).lower() in ("true", "1", "yes")
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", os.environ.get("DJANGO_ALLOWED_HOSTS", "")).split(",")
 ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS if h.strip()]
 RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
@@ -65,13 +68,41 @@ TEMPLATES = [
 WSGI_APPLICATION = 'career_copilot.wsgi.application'
 ASGI_APPLICATION = 'career_copilot.asgi.application'
 
-# Database Configuration with dj-database-url
-DATABASES = {
-    'default': dj_database_url.config(
-        default=f"postgres://{os.getenv('POSTGRES_USER', 'career')}:{os.getenv('POSTGRES_PASSWORD', 'career')}@{os.getenv('POSTGRES_HOST', 'db')}:{os.getenv('POSTGRES_PORT', '5432')}/{os.getenv('POSTGRES_DB', 'career_copilot')}",
-        conn_max_age=600
+# Database configuration
+# Production (Render): DATABASE_URL is required, e.g. the Supabase *session pooler* URL:
+#   postgresql://postgres.<project-ref>:<password>@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require
+# Do NOT use the transaction pooler (port 6543) without DISABLE_SERVER_SIDE_CURSORS = True.
+# Local dev: docker-compose provides POSTGRES_HOST (local Postgres); otherwise with DEBUG on, SQLite is used.
+if os.getenv('DATABASE_URL'):
+    DATABASES = {
+        'default': dj_database_url.config(
+            env='DATABASE_URL',
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=not DEBUG,
+        )
+    }
+elif os.getenv('POSTGRES_HOST'):
+    DATABASES = {
+        'default': dj_database_url.parse(
+            f"postgres://{os.getenv('POSTGRES_USER', 'career')}:{os.getenv('POSTGRES_PASSWORD', 'career')}"
+            f"@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT', '5432')}/{os.getenv('POSTGRES_DB', 'career_copilot')}",
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+elif DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    raise ImproperlyConfigured(
+        'DATABASE_URL is not set. In production set it to the Supabase session-pooler URL '
+        '(port 5432, ?sslmode=require). For local development set DJANGO_DEBUG=True or POSTGRES_HOST.'
     )
-}
 
 AUTH_USER_MODEL = 'accounts.User'
 
